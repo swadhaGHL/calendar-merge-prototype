@@ -220,11 +220,13 @@ function goBack() {
             <BookingChannels v-else-if="activeTab === 'channels'" :config="calendarConfig" @update="updateConfig" />
           </div>
 
-          <!-- Widget Preview -->
+          <!-- Widget Preview — compact (single-column) layout to fit the
+               380px side pane. The full side-by-side layout lives at
+               /booker-preview (the "Open booker widget" header link). -->
           <transition name="panel-slide">
             <div v-if="showWidgetPreview" class="w-[380px] flex-shrink-0">
               <div class="sticky top-4">
-                <BookerWidgetPreview :config="calendarConfig" />
+                <BookerWidgetPreview :config="calendarConfig" :compact="true" />
               </div>
             </div>
           </transition>

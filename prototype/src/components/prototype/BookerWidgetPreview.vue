@@ -5,9 +5,15 @@ import {
   type MeetingLocation,
 } from '../../data/mockCalendars'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   config: UnifiedCalendarConfig
-}>()
+  // When true, render as a single-column compact widget that fits in narrow
+  // containers (used for the in-wizard side preview pane). Default false uses
+  // the side-by-side production layout.
+  compact?: boolean
+}>(), {
+  compact: false,
+})
 
 // --- Booker journey state ---
 const currentStep = ref<1 | 2>(1)
@@ -191,10 +197,14 @@ function tintColor(hex: string, alpha: number): string {
 
 <template>
   <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-    <!-- ============== TWO-COLUMN LAYOUT ============== -->
-    <div class="flex divide-x divide-gray-200">
-      <!-- LEFT IDENTITY PANEL ===================================== -->
-      <div class="w-[300px] flex-shrink-0 p-6 space-y-3">
+    <!-- Two-column on wide containers; single-column when compact (in-wizard
+         side pane). The widget collapses cleanly so it works at 380px wide. -->
+    <div :class="compact ? 'flex flex-col' : 'flex divide-x divide-gray-200'">
+      <!-- LEFT IDENTITY PANEL — becomes top strip in compact mode -->
+      <div :class="compact
+        ? 'border-b border-gray-200 p-4 space-y-2'
+        : 'w-[300px] flex-shrink-0 p-6 space-y-3'"
+      >
         <!-- Back arrow on Page 2 -->
         <button
           v-if="currentStep === 2"
@@ -207,9 +217,10 @@ function tintColor(hex: string, alpha: number): string {
           </svg>
         </button>
 
-        <!-- Logo -->
+        <!-- Logo (smaller in compact mode) -->
         <div
-          class="w-16 h-16 rounded-lg flex items-center justify-center text-white text-xl font-bold"
+          class="rounded-lg flex items-center justify-center text-white font-bold"
+          :class="compact ? 'w-10 h-10 text-base' : 'w-16 h-16 text-xl'"
           :style="{ backgroundColor: brandColor }"
         >
           {{ (config.name || 'C')[0]?.toUpperCase() }}
@@ -332,8 +343,8 @@ function tintColor(hex: string, alpha: number): string {
         </div>
       </div>
 
-      <!-- RIGHT CONTENT PANEL ===================================== -->
-      <div class="flex-1 p-6">
+      <!-- RIGHT CONTENT PANEL — full width on compact, flex in wide mode -->
+      <div :class="compact ? 'p-4' : 'flex-1 p-6'">
         <!-- ===== PAGE 1: DATE + SLOT PICKER ===== -->
         <template v-if="currentStep === 1">
           <h3 class="text-base font-bold text-gray-900 mb-4">Select Date & Time</h3>
@@ -358,8 +369,8 @@ function tintColor(hex: string, alpha: number): string {
             </select>
           </div>
 
-          <!-- Calendar + Slots side-by-side -->
-          <div class="flex gap-6">
+          <!-- Calendar + Slots — side-by-side on wide, stacked on compact -->
+          <div :class="compact ? 'space-y-4' : 'flex gap-6'">
             <!-- Mini Calendar -->
             <div class="flex-1">
               <div class="flex items-center justify-between mb-3">
@@ -411,17 +422,24 @@ function tintColor(hex: string, alpha: number): string {
             </div>
 
             <!-- Time Slots -->
-            <div class="w-32 flex-shrink-0">
+            <div :class="compact ? 'w-full' : 'w-32 flex-shrink-0'">
               <div v-if="!selectedDate" class="text-xs text-gray-400 italic py-2">
                 Pick a date first
               </div>
-              <div v-else class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+              <div v-else
+                :class="compact
+                  ? 'grid grid-cols-3 gap-1.5 max-h-[180px] overflow-y-auto pr-1'
+                  : 'space-y-2 max-h-[400px] overflow-y-auto pr-1'"
+              >
                 <button
                   v-for="slot in slotsList"
                   :key="slot"
                   type="button"
-                  class="w-full text-center px-2 py-2 rounded-lg text-sm font-medium transition-all border"
-                  :class="selectedSlot === slot ? 'text-white' : 'hover:opacity-80'"
+                  class="text-center px-1.5 py-1.5 rounded-lg font-medium transition-all border"
+                  :class="[
+                    compact ? 'text-xs' : 'w-full text-sm',
+                    selectedSlot === slot ? 'text-white' : 'hover:opacity-80'
+                  ]"
                   :style="selectedSlot === slot
                     ? { backgroundColor: brandColor, borderColor: brandColor, color: 'white' }
                     : { borderColor: brandColor, color: brandColor }"
