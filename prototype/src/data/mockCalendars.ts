@@ -97,6 +97,10 @@ export interface UnifiedCalendarConfig {
   // it directly). Days keyed sun→sat. Multi-host calendars ignore this and
   // intersect per-host schedules per locked decision #14.
   calendarAvailability: { day: string; enabled: boolean; start: string; end: string }[]
+  // Calendar-level time zone — required for 0-host calendars (no host whose
+  // tz we could borrow). The schedule above is interpreted in this tz; the
+  // booker widget converts to the booker's local tz at display time.
+  calendarTimeZone: string
 
   // Form & Confirmation
   enableGuests: boolean
@@ -338,6 +342,7 @@ export function createDefaultConfig(): UnifiedCalendarConfig {
       { day: 'Fri', enabled: true,  start: '09:00', end: '17:00' },
       { day: 'Sat', enabled: false, start: '09:00', end: '17:00' },
     ],
+    calendarTimeZone: 'America/New_York',
 
     // Form & Confirmation
     enableGuests: false,

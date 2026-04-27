@@ -35,6 +35,23 @@ function setDayTime(idx: number, key: 'start' | 'end', value: string) {
   })
 }
 
+// Curated time zone list — full IANA list is 400+ entries which is overkill
+// for the prototype. Production would render the full list, grouped by region.
+const timeZoneOptions = [
+  { value: 'America/New_York',     label: '(GMT−05:00) Eastern Time — New York' },
+  { value: 'America/Chicago',      label: '(GMT−06:00) Central Time — Chicago' },
+  { value: 'America/Denver',       label: '(GMT−07:00) Mountain Time — Denver' },
+  { value: 'America/Los_Angeles',  label: '(GMT−08:00) Pacific Time — Los Angeles' },
+  { value: 'Europe/London',        label: '(GMT+00:00) London' },
+  { value: 'Europe/Berlin',        label: '(GMT+01:00) Berlin / Paris / Madrid' },
+  { value: 'Asia/Dubai',           label: '(GMT+04:00) Dubai' },
+  { value: 'Asia/Kolkata',         label: '(GMT+05:30) India — Kolkata' },
+  { value: 'Asia/Singapore',       label: '(GMT+08:00) Singapore' },
+  { value: 'Asia/Tokyo',           label: '(GMT+09:00) Tokyo' },
+  { value: 'Australia/Sydney',     label: '(GMT+10:00) Sydney' },
+  { value: 'UTC',                  label: '(GMT+00:00) UTC' },
+]
+
 function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase()
 }
@@ -90,9 +107,24 @@ function getAvatarColor(userId: string) {
         </div>
       </div>
 
-      <!-- Calendar-level weekly editor (0 hosts). 7 day rows, each with toggle +
-           start/end time. Direct config — no host, no intersection. -->
-      <div v-else class="space-y-1.5">
+      <!-- Calendar-level weekly editor (0 hosts). Time zone above + 7 day rows
+           with toggle + start/end time. Direct config — no host to borrow from. -->
+      <div v-else class="space-y-3">
+        <!-- Time zone selector — required for 0-host calendars since there's
+             no host whose tz we could inherit. -->
+        <div class="flex items-center gap-3 pb-3 border-b border-gray-100">
+          <label class="text-xs font-medium text-gray-700 flex-shrink-0">Time zone</label>
+          <select
+            :value="config.calendarTimeZone"
+            @change="emit('update', { calendarTimeZone: ($event.target as HTMLSelectElement).value })"
+            class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white flex-1 max-w-md"
+          >
+            <option v-for="tz in timeZoneOptions" :key="tz.value" :value="tz.value">
+              {{ tz.label }}
+            </option>
+          </select>
+        </div>
+
         <div
           v-for="(day, idx) in config.calendarAvailability"
           :key="day.day"
@@ -131,7 +163,7 @@ function getAvatarColor(userId: string) {
           <span v-else class="text-xs text-gray-400 italic">Closed</span>
         </div>
         <p class="text-xs text-gray-500 mt-2">
-          Bookers can register for this event during the days and times you mark above. Time zone is set on the booker's side.
+          Bookers can register during the days and times above (in the calendar's time zone). The booker widget converts these to each booker's local time on display.
         </p>
       </div>
     </div>
