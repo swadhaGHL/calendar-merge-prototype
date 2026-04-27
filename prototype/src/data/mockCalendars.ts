@@ -92,6 +92,11 @@ export interface UnifiedCalendarConfig {
   enableRecurring: boolean
   recurringFrequency: string
   recurringCount: number
+  // Calendar-level weekly schedule used when teamMembers.length === 0 (Event
+  // calendars have no host whose schedule we can intersect, so the user sets
+  // it directly). Days keyed sun→sat. Multi-host calendars ignore this and
+  // intersect per-host schedules per locked decision #14.
+  calendarAvailability: { day: string; enabled: boolean; start: string; end: string }[]
 
   // Form & Confirmation
   enableGuests: boolean
@@ -324,6 +329,15 @@ export function createDefaultConfig(): UnifiedCalendarConfig {
     enableRecurring: false,
     recurringFrequency: 'DAILY',
     recurringCount: 1,
+    calendarAvailability: [
+      { day: 'Sun', enabled: false, start: '09:00', end: '17:00' },
+      { day: 'Mon', enabled: true,  start: '09:00', end: '17:00' },
+      { day: 'Tue', enabled: true,  start: '09:00', end: '17:00' },
+      { day: 'Wed', enabled: true,  start: '09:00', end: '17:00' },
+      { day: 'Thu', enabled: true,  start: '09:00', end: '17:00' },
+      { day: 'Fri', enabled: true,  start: '09:00', end: '17:00' },
+      { day: 'Sat', enabled: false, start: '09:00', end: '17:00' },
+    ],
 
     // Form & Confirmation
     enableGuests: false,

@@ -12,9 +12,27 @@ const emit = defineEmits<{
 
 const recurringLocked = computed(() => props.config.teamMembers.length > 1)
 
+const hasNoHost = computed(() => props.config.teamMembers.length === 0)
+
 function toggleRecurring() {
   if (recurringLocked.value) return
   emit('update', { enableRecurring: !props.config.enableRecurring })
+}
+
+function toggleDay(idx: number) {
+  emit('update', {
+    calendarAvailability: props.config.calendarAvailability.map((d, i) =>
+      i === idx ? { ...d, enabled: !d.enabled } : d
+    ),
+  })
+}
+
+function setDayTime(idx: number, key: 'start' | 'end', value: string) {
+  emit('update', {
+    calendarAvailability: props.config.calendarAvailability.map((d, i) =>
+      i === idx ? { ...d, [key]: value } : d
+    ),
+  })
 }
 
 function getInitials(name: string) {
@@ -32,14 +50,23 @@ function getAvatarColor(userId: string) {
   <div class="space-y-6">
     <div>
       <h2 class="text-base font-semibold text-gray-900">Availability</h2>
-      <p class="text-sm text-gray-500 mt-0.5">When each host is open to take bookings. Multi-host calendars use the intersection of host schedules.</p>
+      <p class="text-sm text-gray-500 mt-0.5">
+        {{ hasNoHost
+          ? 'No host on this calendar — set the schedule directly below.'
+          : 'When each host is open to take bookings. Multi-host calendars use the intersection of host schedules.' }}
+      </p>
     </div>
 
-    <!-- Per-staff availability -->
+    <!-- Availability card. With hosts: list of per-host schedules. Without
+         hosts (Event): inline weekly editor — there's no host whose schedule
+         we could intersect, so the user sets it directly. -->
     <div class="bg-white border border-gray-200 rounded-xl p-5">
-      <label class="text-sm font-medium text-gray-700 block mb-3">Booking availability</label>
+      <label class="text-sm font-medium text-gray-700 block mb-3">
+        {{ hasNoHost ? 'Weekly availability' : 'Booking availability' }}
+      </label>
 
-      <div v-if="config.teamMembers.length > 0" class="space-y-2">
+      <!-- Per-host schedules -->
+      <div v-if="!hasNoHost" class="space-y-2">
         <div
           v-for="member in config.teamMembers"
           :key="member.userId"
@@ -63,8 +90,49 @@ function getAvatarColor(userId: string) {
         </div>
       </div>
 
-      <div v-else class="text-sm text-gray-500 italic">
-        No staff assigned. Availability will be set at the calendar level.
+      <!-- Calendar-level weekly editor (0 hosts). 7 day rows, each with toggle +
+           start/end time. Direct config — no host, no intersection. -->
+      <div v-else class="space-y-1.5">
+        <div
+          v-for="(day, idx) in config.calendarAvailability"
+          :key="day.day"
+          class="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg"
+        >
+          <!-- Day toggle -->
+          <button
+            type="button"
+            class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
+            :class="day.enabled ? 'bg-primary-600' : 'bg-gray-200'"
+            @click="toggleDay(idx)"
+          >
+            <span
+              class="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
+              :class="day.enabled ? 'translate-x-5' : 'translate-x-1'"
+            />
+          </button>
+          <span class="text-sm font-medium w-10 flex-shrink-0" :class="day.enabled ? 'text-gray-900' : 'text-gray-400'">
+            {{ day.day }}
+          </span>
+          <template v-if="day.enabled">
+            <input
+              type="time"
+              :value="day.start"
+              @input="setDayTime(idx, 'start', ($event.target as HTMLInputElement).value)"
+              class="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white"
+            />
+            <span class="text-xs text-gray-400">to</span>
+            <input
+              type="time"
+              :value="day.end"
+              @input="setDayTime(idx, 'end', ($event.target as HTMLInputElement).value)"
+              class="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white"
+            />
+          </template>
+          <span v-else class="text-xs text-gray-400 italic">Closed</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">
+          Bookers can register for this event during the days and times you mark above. Time zone is set on the booker's side.
+        </p>
       </div>
     </div>
 
