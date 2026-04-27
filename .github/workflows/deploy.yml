@@ -38,6 +38,11 @@ jobs:
         # Skip vue-tsc — it has unused-var lint errors that don't affect runtime.
         run: npx vite build
 
+      - name: SPA fallback for GitHub Pages
+        # Copy index.html to 404.html so deep links (e.g. /booker-preview)
+        # resolve client-side via Vue Router instead of returning a real 404.
+        run: cp prototype/dist/index.html prototype/dist/404.html
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
